@@ -3,6 +3,7 @@ using System.Linq;
 using BuildEngineMapReader;
 using BuildEngineMapReader.Objects;
 using UnityEngine;
+using static BuildEngine.BuildEngineToUnityUnitConverter;
 using Vector2 = UnityEngine.Vector2;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
@@ -48,16 +49,18 @@ public class LoadMap : MonoBehaviour
         var sectorWalls = map.Walls.Skip(sector.FirstWallIndex).Take(sector.NumWalls);
         var sectorVertices = new List<Vector2>();
 
-        var floorHeight = 1; //MapToWorld(sector.Floor.Z);
-        var ceilingHeight = 10; //MapToWorld(sector.Ceiling.Z);
+        var floorHeight = ScaleHeight(sector.Floor.Z); //;
+        var ceilingHeight = ScaleHeight(sector.Ceiling.Z); //;
+        
+        Debug.Log("Floor height: " + floorHeight + ", Ceiling height: " + ceilingHeight);
         
         foreach (var wall in sectorWalls)
         {
-            sectorVertices.Add(new Vector2(MapToWorld(wall.X), MapToWorld(wall.Y)));
+            sectorVertices.Add(new Vector2(ScaleWidth(wall.X), ScaleWidth(wall.Y)));
             
             var nextWall = map.Walls[wall.NextWallPoint2];
-            var wallStart = new Vector2(MapToWorld(wall.X), MapToWorld(wall.Y));
-            var wallEnd = new Vector2(MapToWorld(nextWall.X), MapToWorld(nextWall.Y));
+            var wallStart = new Vector2(ScaleWidth(wall.X), ScaleWidth(wall.Y));
+            var wallEnd = new Vector2(ScaleWidth(nextWall.X), ScaleWidth(nextWall.Y));
 
             if (wall.NextSector == -1 && wall.NextWallPoint2 != -1)
             {
@@ -133,12 +136,6 @@ public class LoadMap : MonoBehaviour
         meshRenderer.material = wallMaterial;
 
         _wallCounter++;
-    }
-    
-    
-    private float MapToWorld(float mapValue)
-    {
-        return mapValue / 128;
     }
 
  }
