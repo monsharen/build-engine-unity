@@ -10,6 +10,7 @@ using Vector2 = UnityEngine.Vector2;
 public class LoadMap : MonoBehaviour
 {
 
+    public GameObject rootNode;
     public Material wallMaterial;
     public Material floorMaterial;
     
@@ -30,6 +31,12 @@ public class LoadMap : MonoBehaviour
         Map map = mapFileReader.ReadFile(fileName);
         Debug.Log(map);
         InstantiateMap(map);
+        RotateMap();
+    }
+
+    void RotateMap()
+    {
+        rootNode.transform.Rotate(0, 0, 180);
     }
 
     void InstantiateMap(Map map)
@@ -75,7 +82,7 @@ public class LoadMap : MonoBehaviour
     public void CreateSectorFloor(List<Vector2> vertices, float floorHeight, Material material)
     {
         GameObject floor = new GameObject("SectorFloor_" + _sectorCounter);
-
+        floor.transform.parent = rootNode.transform;
         MeshRenderer meshRenderer = floor.AddComponent<MeshRenderer>();
         MeshFilter meshFilter = floor.AddComponent<MeshFilter>();
 
@@ -108,14 +115,14 @@ public class LoadMap : MonoBehaviour
             triangles.Add(i);
             triangles.Add(i + 1);
         }
-
-        triangles.Reverse(); // make them face the right way
+        
         return triangles.ToArray();
     }
     
     public void CreateWall(Vector2 start, Vector2 end, float floorHeight, float ceilingHeight, Material wallMaterial)
     {
         GameObject wall = new GameObject("Wall_" + _wallCounter);
+        wall.transform.parent = rootNode.transform;
         MeshRenderer meshRenderer = wall.AddComponent<MeshRenderer>();
         MeshFilter meshFilter = wall.AddComponent<MeshFilter>();
 
@@ -126,8 +133,11 @@ public class LoadMap : MonoBehaviour
             new (start.x, ceilingHeight, start.y),
             new (end.x, ceilingHeight, end.y)
         };
-        
-        int[] triangles = { 1, 3, 2, 1, 2, 0 };
+
+        var triangles = new int[6] { 0, 2, 1, 1, 2, 3 };
+
+        //int[] triangles = { 1, 3, 2, 1, 2, 0 }; 
+        //int[] triangles = { 0, 2, 1, 2, 3, 1 }; // Define the two triangles
         Mesh mesh = new Mesh();
         mesh.vertices = vertices;
         mesh.triangles = triangles;
