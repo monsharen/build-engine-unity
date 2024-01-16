@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using BuildEngineMapReader;
 using BuildEngineMapReader.Objects;
+using DefaultNamespace;
 using UnityEngine;
 using static BuildEngine.BuildEngineToUnityUnitConverter;
 using Vector2 = UnityEngine.Vector2;
@@ -11,8 +12,6 @@ public class LoadMap : MonoBehaviour
 {
 
     public GameObject rootNode;
-    public Material wallMaterial;
-    public Material floorMaterial;
     
     private Mesh _mesh;
     private MeshFilter _meshFilter;
@@ -45,6 +44,7 @@ public class LoadMap : MonoBehaviour
         foreach (var sector in mapSectors)
         {
             CreateSector(sector, map);
+            _sectorCounter++;
         }
     }
     
@@ -65,36 +65,42 @@ public class LoadMap : MonoBehaviour
             var nextWall = map.Walls[wall.NextWallPoint2];
             var wallStart = new Vector2(ScaleWidth(wall.X), ScaleWidth(wall.Y));
             var wallEnd = new Vector2(ScaleWidth(nextWall.X), ScaleWidth(nextWall.Y));
-
+            
             if (wall.NextSector == -1 && wall.NextWallPoint2 != -1)
             {
-                CreateWall(wallStart, wallEnd, floorHeight, ceilingHeight, wallMaterial);
+                var wallTexture = TextureUtil.LoadTextureWithPicnum(wall.PicNum);
+                CreateWall(wallStart, wallEnd, floorHeight, ceilingHeight, wallTexture);
             }
 
             if (wall.NextSector != -1)
             {
                 Sector nextSector = map.Sectors[wall.NextSector];
                 var nextSectorFloorHeight = ScaleHeight(nextSector.Floor.Z);
+                var wallTexture = TextureUtil.LoadTextureWithPicnum(wall.PicNum);
                 if (floorHeight > nextSectorFloorHeight)
                 {
-                    CreateWall(wallStart, wallEnd, nextSectorFloorHeight, floorHeight, wallMaterial);
+                    CreateWall(wallStart, wallEnd, nextSectorFloorHeight, floorHeight, wallTexture);
                 }
                 else
                 {
-                    CreateWall(wallStart, wallEnd, floorHeight, nextSectorFloorHeight, wallMaterial);
+                    CreateWall(wallStart, wallEnd, floorHeight, nextSectorFloorHeight, wallTexture);
                 }
             }
         }
         
+        var texture2d = TextureUtil.LoadTextureWithPicnum(sector.Floor.PicNum);
+        CreateSectorFloor(sectorVertices, floorHeight, texture2d);
         
-        CreateSectorFloor(sectorVertices, floorHeight, floorMaterial);
+        texture2d = TextureUtil.LoadTextureWithPicnum(sector.Ceiling.PicNum);
+        CreateSectorCeiling(sectorVertices, ceilingHeight, texture2d);
     }
     
-    public void CreateSectorFloor(List<Vector2> vertices, float floorHeight, Material material)
+    public void CreateSectorFloor(List<Vector2> vertices, float floorHeight, Texture2D texture)
     {
         GameObject floor = new GameObject("SectorFloor_" + _sectorCounter);
         floor.transform.parent = rootNode.transform;
         MeshRenderer meshRenderer = floor.AddComponent<MeshRenderer>();
+        meshRenderer.material.mainTexture = texture;
         MeshFilter meshFilter = floor.AddComponent<MeshFilter>();
 
         // Convert 2D vertices to 3D vertices
@@ -107,6 +113,36 @@ public class LoadMap : MonoBehaviour
             uvs.Add(new Vector2(vertex.x, vertex.y)); // Use x and y for UVs
         }
         
+        int[] triangles = TriangulateConvexPolygon(vertices3D);
+
+        // Create the mesh
+        var mesh = new Mesh();
+        mesh.vertices = vertices3D.ToArray();
+        mesh.triangles = triangles;
+        mesh.uv = uvs.ToArray();
+        meshFilter.mesh = mesh;
+    }
+    
+    public void CreateSectorCeiling(List<Vector2> vertices, float ceilingHeight, Texture2D texture)
+    {
+        GameObject ceiling = new GameObject("SectorCeiling_" + _sectorCounter);
+        ceiling.transform.parent = rootNode.transform;
+        MeshRenderer meshRenderer = ceiling.AddComponent<MeshRenderer>();
+        meshRenderer.material.mainTexture = texture;
+        MeshFilter meshFilter = ceiling.AddComponent<MeshFilter>();
+
+        // Convert 2D vertices to 3D vertices
+        var vertices3D = new List<Vector3>();
+        var uvs = new List<Vector2>(); // List for UVs
+        
+        foreach (Vector2 vertex in vertices)
+        {
+            vertices3D.Add(new Vector3(vertex.x, ceilingHeight, vertex.y));
+            uvs.Add(new Vector2(vertex.x, vertex.y)); // Use x and y for UVs
+        }
+
+        vertices3D.Reverse();
+        uvs.Reverse();
         
         int[] triangles = TriangulateConvexPolygon(vertices3D);
 
@@ -116,9 +152,6 @@ public class LoadMap : MonoBehaviour
         mesh.triangles = triangles;
         mesh.uv = uvs.ToArray();
         meshFilter.mesh = mesh;
-        meshRenderer.material = material;
-        
-        _sectorCounter++;
     }
     
     private int[] TriangulateConvexPolygon(List<Vector3> vertices)
@@ -134,11 +167,12 @@ public class LoadMap : MonoBehaviour
         return triangles.ToArray();
     }
     
-    public void CreateWall(Vector2 start, Vector2 end, float floorHeight, float ceilingHeight, Material wallMaterial)
+    public void CreateWall(Vector2 start, Vector2 end, float floorHeight, float ceilingHeight, Texture2D texture)
     {
         GameObject wall = new GameObject("Wall_" + _wallCounter);
         wall.transform.parent = rootNode.transform;
         MeshRenderer meshRenderer = wall.AddComponent<MeshRenderer>();
+        meshRenderer.material.mainTexture = texture;
         MeshFilter meshFilter = wall.AddComponent<MeshFilter>();
 
         Vector3[] vertices = new Vector3[4]
@@ -161,7 +195,6 @@ public class LoadMap : MonoBehaviour
         mesh.uv = uvs;
 
         meshFilter.mesh = mesh;
-        meshRenderer.material = wallMaterial;
 
         _wallCounter++;
     }
