@@ -56,8 +56,6 @@ public class LoadMap : MonoBehaviour
         var floorHeight = ScaleHeight(sector.Floor.Z); //;
         var ceilingHeight = ScaleHeight(sector.Ceiling.Z); //;
         
-        Debug.Log("Floor height: " + floorHeight + ", Ceiling height: " + ceilingHeight);
-        
         foreach (var wall in sectorWalls)
         {
             sectorVertices.Add(new Vector2(ScaleWidth(wall.X), ScaleWidth(wall.Y)));

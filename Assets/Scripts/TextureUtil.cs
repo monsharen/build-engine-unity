@@ -9,7 +9,6 @@ namespace DefaultNamespace
         public static Texture2D LoadTextureWithPicnum(int picNum)
         {
             string textureFileName = "tile" + picNum.ToString("D4");
-            Debug.Log("sector Floor texture: " + textureFileName);
             return LoadTexture("Assets/Sprites/upscale/" + textureFileName + ".png");
         }
         private static Texture2D LoadTexture(string filePath)
