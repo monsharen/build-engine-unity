@@ -63,9 +63,9 @@ namespace BuildEngine
                 var wallStart = new Vector2(ScaleWidth(wall.X), ScaleWidth(wall.Y));
                 var wallEnd = new Vector2(ScaleWidth(nextWall.X), ScaleWidth(nextWall.Y));
             
-                if (wall.NextSector == -1)
+                if (IsRegularWall(wall))
                 {
-                    if (wall.NextWallPoint2 != -1)
+                    if (IsAWallToTheRightOf(wall))
                     {
                         var wallTexture = _textureManager.LoadTextureWithPicnum(wall.PicNum);
                         CreateWall(sectorGameObject.transform, wallStart, wallEnd, floorHeight, ceilingHeight, wallTexture);    
@@ -112,7 +112,17 @@ namespace BuildEngine
             texture2d = _textureManager.LoadTextureWithPicnum(sector.Ceiling.PicNum);
             CreateSectorCeiling(sectorGameObject.transform, sectorVertices, ceilingHeight, texture2d);
         }
-    
+
+        private static bool IsAWallToTheRightOf(Wall wall)
+        {
+            return wall.NextWallPoint2 != -1;
+        }
+
+        private static bool IsRegularWall(Wall wall)
+        {
+            return wall.NextSector == -1;
+        }
+
         private void CreateSectorFloor(Transform rootNode, List<Vector2> vertices, float floorHeight, Texture2D texture)
         {
             var floor = new GameObject("SectorFloor_" + _sectorCounter);
