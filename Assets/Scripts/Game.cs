@@ -3,7 +3,6 @@ using BuildEngineMapReader;
 using DefaultNamespace;
 using UnityEngine;
 
-[RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class Game : MonoBehaviour
 {
         
@@ -23,11 +22,4 @@ public class Game : MonoBehaviour
         var mapRenderer = new MapRenderer(rootNode, _textureManager);
         mapRenderer.Render(map);
     }
-
-        
-
-        
-    
-        
-
 }
