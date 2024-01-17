@@ -18,15 +18,11 @@ namespace BuildEngine
         public GameObject rootNode;
 
         private TextureManager _textureManager;
-        private Mesh _mesh;
-        private MeshFilter _meshFilter;
         private int _wallCounter = 0;
         private int _sectorCounter = 0;
         private void Start()
         {
             _textureManager = new TextureManager();
-            _meshFilter = GetComponent<MeshFilter>();
-            _mesh = _meshFilter.mesh = new Mesh();
         
             var mapFileReader = new MapFileReader();
             var fileName = AssetManager.GetMapAssetPath("THE_BASE.MAP");
@@ -43,8 +39,6 @@ namespace BuildEngine
 
         private void InstantiateMap(Map map)
         {
-            _mesh.name = "Map";
-
             var mapSectors = map.Sectors;
 
             foreach (var sector in mapSectors)
