@@ -272,6 +272,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6eda0edec0d141e283f1ab99e138dee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  missingTexture: {fileID: 2800000, guid: 5135d4d0293ba4d65a09cfed3c4d31ec, type: 3}
   rootNode: {fileID: 390443208}
 --- !u!4 &1001319699
 Transform:
