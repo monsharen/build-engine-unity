@@ -11,7 +11,7 @@ using Vector2 = UnityEngine.Vector2;
 namespace BuildEngine
 {
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
-    public class LoadMap : MonoBehaviour
+    public class Game : MonoBehaviour
     {
 
         public Texture2D errorTexture;
