@@ -29,7 +29,7 @@ namespace BuildEngine
             _mesh = _meshFilter.mesh = new Mesh();
         
             var mapFileReader = new MapFileReader();
-            var fileName = "/Users/thomas.rosenquist/git/BuildEngineMapReader/Maps/THE_BASE.MAP";
+            var fileName = GetMapAssetPath("THE_BASE.MAP");
             var map = mapFileReader.ReadFile(fileName);
             Debug.Log(map);
             InstantiateMap(map);
@@ -52,6 +52,13 @@ namespace BuildEngine
                 CreateSector(sector, map);
                 _sectorCounter++;
             }
+        }
+        
+        private string GetMapAssetPath(string mapName)
+        {
+            var mapPath = Application.dataPath + "/Maps/" + mapName;
+            Debug.Log(mapPath);
+            return mapPath;
         }
     
         private void CreateSector(Sector sector, Map map)
