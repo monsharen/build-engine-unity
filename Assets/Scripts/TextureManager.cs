@@ -7,8 +7,19 @@ namespace DefaultNamespace
     public class TextureManager
     {
 
-        private Dictionary<int, Texture2D> _textureCache = new Dictionary<int, Texture2D>();
-        
+        private readonly Dictionary<int, Texture2D> _textureCache = new Dictionary<int, Texture2D>();
+        private readonly Texture2D _missingTexture;
+
+        public TextureManager(Texture2D missingTexture)
+        {
+            _missingTexture = missingTexture;
+        }
+
+        public Texture2D GetMissingTexture()
+        {
+            return _missingTexture;
+        }
+
         public Texture2D LoadTextureWithPicnum(int picNum)
         {
             if (_textureCache.TryGetValue(picNum, out var texture))
@@ -31,7 +42,7 @@ namespace DefaultNamespace
                 return texture;
             }
 
-            return null;
+            return _missingTexture;
         }
     }
 }
