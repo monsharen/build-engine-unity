@@ -16,19 +16,21 @@ namespace BuildEngine
 
         public Texture2D errorTexture;
         public GameObject rootNode;
-    
+
+        private TextureManager _textureManager;
         private Mesh _mesh;
         private MeshFilter _meshFilter;
         private int _wallCounter = 0;
         private int _sectorCounter = 0;
         private void Start()
         {
+            _textureManager = new TextureManager();
             _meshFilter = GetComponent<MeshFilter>();
             _mesh = _meshFilter.mesh = new Mesh();
         
             var mapFileReader = new MapFileReader();
-            string fileName = "/Users/thomas.rosenquist/git/BuildEngineMapReader/Maps/THE_BASE.MAP";
-            Map map = mapFileReader.ReadFile(fileName);
+            var fileName = "/Users/thomas.rosenquist/git/BuildEngineMapReader/Maps/THE_BASE.MAP";
+            var map = mapFileReader.ReadFile(fileName);
             Debug.Log(map);
             InstantiateMap(map);
             RotateMap();
@@ -56,6 +58,7 @@ namespace BuildEngine
         {
             var sectorName = "Sector_" + _sectorCounter;
             var sectorGameObject = new GameObject(sectorName);
+            sectorGameObject.isStatic = true;
             sectorGameObject.transform.parent = rootNode.transform;
         
             var sectorWalls = map.Walls.Skip(sector.FirstWallIndex).Take(sector.NumWalls);
@@ -76,7 +79,7 @@ namespace BuildEngine
                 {
                     if (wall.NextWallPoint2 != -1)
                     {
-                        var wallTexture = TextureUtil.LoadTextureWithPicnum(wall.PicNum);
+                        var wallTexture = _textureManager.LoadTextureWithPicnum(wall.PicNum);
                         CreateWall(sectorGameObject.transform, wallStart, wallEnd, floorHeight, ceilingHeight, wallTexture);    
                     } else {
                         // This case does not appear to happen in the current test map
@@ -87,9 +90,9 @@ namespace BuildEngine
                  * This sector has a next sector, so we need to leave it blank and create a wall between this sector and
                  * the next sector if there's a height difference. 
                  */
-                    var wallTexture = TextureUtil.LoadTextureWithPicnum(wall.PicNum);
+                    var wallTexture = _textureManager.LoadTextureWithPicnum(wall.PicNum);
                 
-                    Sector nextSector = map.Sectors[wall.NextSector];
+                    var nextSector = map.Sectors[wall.NextSector];
                     var nextSectorFloorHeight = ScaleHeight(nextSector.Floor.Z);
                 
                     if (floorHeight > nextSectorFloorHeight)
@@ -114,10 +117,11 @@ namespace BuildEngine
                 }
             }
         
-            var texture2d = TextureUtil.LoadTextureWithPicnum(sector.Floor.PicNum);
+            
+            var texture2d = _textureManager.LoadTextureWithPicnum(sector.Floor.PicNum);
             CreateSectorFloor(sectorGameObject.transform, sectorVertices, floorHeight, texture2d);
         
-            texture2d = TextureUtil.LoadTextureWithPicnum(sector.Ceiling.PicNum);
+            texture2d = _textureManager.LoadTextureWithPicnum(sector.Ceiling.PicNum);
             CreateSectorCeiling(sectorGameObject.transform, sectorVertices, ceilingHeight, texture2d);
         }
     
@@ -195,13 +199,13 @@ namespace BuildEngine
     
         private void CreateWall(Transform rootNode, Vector2 start, Vector2 end, float floorHeight, float ceilingHeight, Texture2D texture)
         {
-            GameObject wall = new GameObject("Wall_" + _wallCounter);
+            var wall = new GameObject("Wall_" + _wallCounter);
             wall.transform.parent = rootNode.transform;
-            MeshRenderer meshRenderer = wall.AddComponent<MeshRenderer>();
+            var meshRenderer = wall.AddComponent<MeshRenderer>();
             meshRenderer.material.mainTexture = texture;
-            MeshFilter meshFilter = wall.AddComponent<MeshFilter>();
+            var meshFilter = wall.AddComponent<MeshFilter>();
 
-            Vector3[] vertices = new Vector3[4]
+            var vertices = new Vector3[4]
             {
                 new (start.x, floorHeight, start.y),
                 new (end.x, floorHeight, end.y),
@@ -213,7 +217,7 @@ namespace BuildEngine
 
             var triangles = new int[6] { 0, 2, 1, 1, 2, 3 };
         
-            Mesh mesh = new Mesh();
+            var mesh = new Mesh();
             mesh.vertices = vertices;
             mesh.triangles = triangles;
             mesh.uv = uvs;
