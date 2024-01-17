@@ -11,6 +11,7 @@ using Vector2 = UnityEngine.Vector2;
 public class LoadMap : MonoBehaviour
 {
 
+    public Texture2D errorTexture;
     public GameObject rootNode;
     
     private Mesh _mesh;
@@ -50,6 +51,10 @@ public class LoadMap : MonoBehaviour
     
     private void CreateSector(Sector sector, Map map)
     {
+        string sectorName = "Sector_" + _sectorCounter;
+        var sectorGameObject = new GameObject(sectorName);
+        sectorGameObject.transform.parent = rootNode.transform;
+        
         var sectorWalls = map.Walls.Skip(sector.FirstWallIndex).Take(sector.NumWalls);
         var sectorVertices = new List<Vector2>();
 
@@ -64,36 +69,56 @@ public class LoadMap : MonoBehaviour
             var wallStart = new Vector2(ScaleWidth(wall.X), ScaleWidth(wall.Y));
             var wallEnd = new Vector2(ScaleWidth(nextWall.X), ScaleWidth(nextWall.Y));
             
-            if (wall.NextSector == -1 && wall.NextWallPoint2 != -1)
+            if (wall.NextSector == -1)
             {
+                if (wall.NextWallPoint2 != -1)
+                {
+                    var wallTexture = TextureUtil.LoadTextureWithPicnum(wall.PicNum);
+                    CreateWall(sectorGameObject.transform, wallStart, wallEnd, floorHeight, ceilingHeight, wallTexture);    
+                } else {
+                    // This case does not appear to happen in the current test map
+                    Debug.Log("Wall has no next sector or next wall point 2");
+                    CreateWall(sectorGameObject.transform, wallStart, wallEnd, floorHeight, ceilingHeight, errorTexture);    
+                }
+            } else {
+                /*
+                 * This sector has a next sector, so we need to leave it blank and create a wall between this sector and
+                 * the next sector if there's a height difference. 
+                 */
                 var wallTexture = TextureUtil.LoadTextureWithPicnum(wall.PicNum);
-                CreateWall(wallStart, wallEnd, floorHeight, ceilingHeight, wallTexture);
-            }
-
-            if (wall.NextSector != -1)
-            {
+                
                 Sector nextSector = map.Sectors[wall.NextSector];
                 var nextSectorFloorHeight = ScaleHeight(nextSector.Floor.Z);
-                var wallTexture = TextureUtil.LoadTextureWithPicnum(wall.PicNum);
+                
                 if (floorHeight > nextSectorFloorHeight)
                 {
-                    CreateWall(wallStart, wallEnd, nextSectorFloorHeight, floorHeight, wallTexture);
+                    CreateWall(sectorGameObject.transform, wallStart, wallEnd, nextSectorFloorHeight, floorHeight, wallTexture);
                 }
-                else
+                else if (floorHeight < nextSectorFloorHeight)
                 {
-                    CreateWall(wallStart, wallEnd, floorHeight, nextSectorFloorHeight, wallTexture);
+                    CreateWall(sectorGameObject.transform, wallStart, wallEnd, floorHeight, nextSectorFloorHeight, wallTexture);
+                }
+                
+                var nextSectorCeilingHeight = ScaleHeight(nextSector.Ceiling.Z);
+                if (ceilingHeight > nextSectorCeilingHeight)
+                {
+                    CreateWall(sectorGameObject.transform, wallStart, wallEnd, nextSectorCeilingHeight, ceilingHeight, wallTexture);
+                }
+                else if (ceilingHeight < nextSectorCeilingHeight)
+                {
+                    CreateWall(sectorGameObject.transform, wallStart, wallEnd, ceilingHeight, nextSectorCeilingHeight, wallTexture);
                 }
             }
         }
         
         var texture2d = TextureUtil.LoadTextureWithPicnum(sector.Floor.PicNum);
-        CreateSectorFloor(sectorVertices, floorHeight, texture2d);
+        CreateSectorFloor(sectorGameObject.transform, sectorVertices, floorHeight, texture2d);
         
         texture2d = TextureUtil.LoadTextureWithPicnum(sector.Ceiling.PicNum);
-        CreateSectorCeiling(sectorVertices, ceilingHeight, texture2d);
+        CreateSectorCeiling(sectorGameObject.transform, sectorVertices, ceilingHeight, texture2d);
     }
     
-    public void CreateSectorFloor(List<Vector2> vertices, float floorHeight, Texture2D texture)
+    public void CreateSectorFloor(Transform rootNode, List<Vector2> vertices, float floorHeight, Texture2D texture)
     {
         GameObject floor = new GameObject("SectorFloor_" + _sectorCounter);
         floor.transform.parent = rootNode.transform;
@@ -121,7 +146,7 @@ public class LoadMap : MonoBehaviour
         meshFilter.mesh = mesh;
     }
     
-    public void CreateSectorCeiling(List<Vector2> vertices, float ceilingHeight, Texture2D texture)
+    public void CreateSectorCeiling(Transform rootNode, List<Vector2> vertices, float ceilingHeight, Texture2D texture)
     {
         GameObject ceiling = new GameObject("SectorCeiling_" + _sectorCounter);
         ceiling.transform.parent = rootNode.transform;
@@ -165,7 +190,7 @@ public class LoadMap : MonoBehaviour
         return triangles.ToArray();
     }
     
-    public void CreateWall(Vector2 start, Vector2 end, float floorHeight, float ceilingHeight, Texture2D texture)
+    public void CreateWall(Transform rootNode, Vector2 start, Vector2 end, float floorHeight, float ceilingHeight, Texture2D texture)
     {
         GameObject wall = new GameObject("Wall_" + _wallCounter);
         wall.transform.parent = rootNode.transform;
@@ -184,9 +209,7 @@ public class LoadMap : MonoBehaviour
         var uvs = GetUvs(start, end, floorHeight, ceilingHeight);
 
         var triangles = new int[6] { 0, 2, 1, 1, 2, 3 };
-
-        //int[] triangles = { 1, 3, 2, 1, 2, 0 }; 
-        //int[] triangles = { 0, 2, 1, 2, 3, 1 }; // Define the two triangles
+        
         Mesh mesh = new Mesh();
         mesh.vertices = vertices;
         mesh.triangles = triangles;
@@ -202,17 +225,13 @@ public class LoadMap : MonoBehaviour
         var wallWidth = Vector3.Distance(new Vector3(start.x, 0, start.y), new Vector3(end.x, 0, end.y));
         var wallHeight = ceilingHeight - floorHeight;
 
-        // Scale factor for texture tiling
-        var textureScaleX = wallWidth; // Adjust this factor as needed
-        var textureScaleY = wallHeight; // Adjust this factor as needed
-
         // Set UVs based on wall dimensions
         return new Vector2[4]
         {
             new Vector2(0, 0), // Bottom left
-            new Vector2(textureScaleX, 0), // Bottom right
-            new Vector2(0, textureScaleY), // Top left
-            new Vector2(textureScaleX, textureScaleY) // Top right
+            new Vector2(wallWidth, 0), // Bottom right
+            new Vector2(0, wallHeight), // Top left
+            new Vector2(wallWidth, wallHeight) // Top right
         };
     }
 
