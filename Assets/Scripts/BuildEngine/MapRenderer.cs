@@ -44,8 +44,7 @@ namespace BuildEngine
         
         private void CreateSector(Sector sector, Map map)
         {
-            var sectorName = "Sector_" + _sectorCounter;
-            var sectorGameObject = new GameObject(sectorName);
+            var sectorGameObject = new GameObject("Sector_" + _sectorCounter);
             sectorGameObject.isStatic = true;
             sectorGameObject.transform.parent = _rootNode.transform;
         
@@ -123,63 +122,48 @@ namespace BuildEngine
             return wall.NextSector == -1;
         }
 
+        private GameObject CreateHorizontalPlane(Transform rootNode, List<Vector2> vertices, float planeHeight, Texture2D texture, String prefix)
+        {
+            var plane = new GameObject(prefix + _sectorCounter);
+            plane.transform.parent = rootNode.transform;
+            var meshRenderer = plane.AddComponent<MeshRenderer>();
+            meshRenderer.material.mainTexture = texture;
+            var meshFilter = plane.AddComponent<MeshFilter>();
+
+            // Convert 2D vertices to 3D vertices
+            var vertices3D = new List<Vector3>();
+            var uvs = new List<Vector2>(); // List for UVs
+        
+            foreach (Vector2 vertex in vertices)
+            {
+                vertices3D.Add(new Vector3(vertex.x, planeHeight, vertex.y));
+                uvs.Add(new Vector2(vertex.x, vertex.y)); // Use x and y for UVs
+            }
+
+            // Create the mesh
+            var mesh = new Mesh();
+            mesh.vertices = vertices3D.ToArray();
+            mesh.triangles = TriangulateConvexPolygon(vertices3D);
+            mesh.uv = uvs.ToArray();
+            meshFilter.mesh = mesh;
+            return plane;
+        }
+
         private void CreateSectorFloor(Transform rootNode, List<Vector2> vertices, float floorHeight, Texture2D texture)
         {
-            var floor = new GameObject("SectorFloor_" + _sectorCounter);
-            floor.transform.parent = rootNode.transform;
-            var meshRenderer = floor.AddComponent<MeshRenderer>();
-            meshRenderer.material.mainTexture = texture;
-            var meshFilter = floor.AddComponent<MeshFilter>();
-
-            // Convert 2D vertices to 3D vertices
-            var vertices3D = new List<Vector3>();
-            var uvs = new List<Vector2>(); // List for UVs
-        
-            foreach (Vector2 vertex in vertices)
-            {
-                vertices3D.Add(new Vector3(vertex.x, floorHeight, vertex.y));
-                uvs.Add(new Vector2(vertex.x, vertex.y)); // Use x and y for UVs
-            }
-        
-            var triangles = TriangulateConvexPolygon(vertices3D);
-
-            // Create the mesh
-            var mesh = new Mesh();
-            mesh.vertices = vertices3D.ToArray();
-            mesh.triangles = triangles;
-            mesh.uv = uvs.ToArray();
-            meshFilter.mesh = mesh;
+            CreateHorizontalPlane(rootNode, vertices, floorHeight, texture, "SectorFloor_");
         }
-    
+
         private void CreateSectorCeiling(Transform rootNode, List<Vector2> vertices, float ceilingHeight, Texture2D texture)
         {
-            var ceiling = new GameObject("SectorCeiling_" + _sectorCounter);
-            ceiling.transform.parent = rootNode.transform;
-            var meshRenderer = ceiling.AddComponent<MeshRenderer>();
-            meshRenderer.material.mainTexture = texture;
-            var meshFilter = ceiling.AddComponent<MeshFilter>();
+            var ceiling = CreateHorizontalPlane(rootNode, vertices, ceilingHeight, texture, "SectorCeiling_");
+            MirrorPlaneVertically(ceiling.transform, ceilingHeight);
+        }
 
-            // Convert 2D vertices to 3D vertices
-            var vertices3D = new List<Vector3>();
-            var uvs = new List<Vector2>(); // List for UVs
-        
-            foreach (Vector2 vertex in vertices)
-            {
-                vertices3D.Add(new Vector3(vertex.x, ceilingHeight, vertex.y));
-                uvs.Add(new Vector2(vertex.x, vertex.y)); // Use x and y for UVs
-            }
-
-            vertices3D.Reverse();
-            uvs.Reverse();
-        
-            var triangles = TriangulateConvexPolygon(vertices3D);
-
-            // Create the mesh
-            var mesh = new Mesh();
-            mesh.vertices = vertices3D.ToArray();
-            mesh.triangles = triangles;
-            mesh.uv = uvs.ToArray();
-            meshFilter.mesh = mesh;
+        private void MirrorPlaneVertically(Transform transform, float planeHeight)
+        {
+            transform.localScale = Vector3.Scale(transform.localScale, new Vector3(1f, -1f, 1f));
+            transform.localPosition = new Vector3(transform.localPosition.x, transform.localPosition.y + 2 * planeHeight, transform.localPosition.z);
         }
     
         private static int[] TriangulateConvexPolygon(List<Vector3> vertices)
