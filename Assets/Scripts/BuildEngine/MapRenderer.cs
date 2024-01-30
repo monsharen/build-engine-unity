@@ -66,7 +66,7 @@ namespace BuildEngine
                 {
                     if (IsAWallToTheRightOf(wall))
                     {
-                        var wallTexture = _textureManager.LoadTextureWithPicnum(wall.PicNum);
+                        var wallTexture = _textureManager.LoadMaterialWithPicnum(wall.PicNum);
                         CreateWall(sectorGameObject.transform, wallStart, wallEnd, floorHeight, ceilingHeight, wallTexture);    
                     } else {
                         // This case does not appear to happen in the current test map
@@ -77,7 +77,7 @@ namespace BuildEngine
                  * This sector has a next sector, so we need to leave it blank and create a wall between this sector and
                  * the next sector if there's a height difference. 
                  */
-                    var wallTexture = _textureManager.LoadTextureWithPicnum(wall.PicNum);
+                    var wallTexture = _textureManager.LoadMaterialWithPicnum(wall.PicNum);
                 
                     var nextSector = map.Sectors[wall.NextSector];
                     var nextSectorFloorHeight = ScaleHeight(nextSector.Floor.Z);
@@ -105,10 +105,10 @@ namespace BuildEngine
             }
         
             
-            var texture2d = _textureManager.LoadTextureWithPicnum(sector.Floor.PicNum);
+            var texture2d = _textureManager.LoadMaterialWithPicnum(sector.Floor.PicNum);
             CreateSectorFloor(sectorGameObject.transform, sectorVertices, floorHeight, texture2d);
         
-            texture2d = _textureManager.LoadTextureWithPicnum(sector.Ceiling.PicNum);
+            texture2d = _textureManager.LoadMaterialWithPicnum(sector.Ceiling.PicNum);
             CreateSectorCeiling(sectorGameObject.transform, sectorVertices, ceilingHeight, texture2d);
         }
 
@@ -122,12 +122,12 @@ namespace BuildEngine
             return wall.NextSector == -1;
         }
 
-        private GameObject CreateHorizontalPlane(Transform rootNode, List<Vector2> vertices, float planeHeight, Texture2D texture, String prefix)
+        private GameObject CreateHorizontalPlane(Transform rootNode, List<Vector2> vertices, float planeHeight, Material texture, String prefix)
         {
             var plane = new GameObject(prefix + _sectorCounter);
             plane.transform.parent = rootNode.transform;
             var meshRenderer = plane.AddComponent<MeshRenderer>();
-            meshRenderer.material.mainTexture = texture;
+            meshRenderer.material = texture;
             var meshFilter = plane.AddComponent<MeshFilter>();
 
             // Convert 2D vertices to 3D vertices
@@ -149,12 +149,12 @@ namespace BuildEngine
             return plane;
         }
 
-        private void CreateSectorFloor(Transform rootNode, List<Vector2> vertices, float floorHeight, Texture2D texture)
+        private void CreateSectorFloor(Transform rootNode, List<Vector2> vertices, float floorHeight, Material texture)
         {
             CreateHorizontalPlane(rootNode, vertices, floorHeight, texture, "SectorFloor_");
         }
 
-        private void CreateSectorCeiling(Transform rootNode, List<Vector2> vertices, float ceilingHeight, Texture2D texture)
+        private void CreateSectorCeiling(Transform rootNode, List<Vector2> vertices, float ceilingHeight, Material texture)
         {
             var ceiling = CreateHorizontalPlane(rootNode, vertices, ceilingHeight, texture, "SectorCeiling_");
             MirrorPlaneVertically(ceiling.transform, ceilingHeight);
@@ -179,12 +179,12 @@ namespace BuildEngine
             return triangles.ToArray();
         }
     
-        private void CreateWall(Transform rootNode, Vector2 start, Vector2 end, float floorHeight, float ceilingHeight, Texture2D texture)
+        private void CreateWall(Transform rootNode, Vector2 start, Vector2 end, float floorHeight, float ceilingHeight, Material texture)
         {
             var wall = new GameObject("Wall_" + _wallCounter);
             wall.transform.parent = rootNode.transform;
             var meshRenderer = wall.AddComponent<MeshRenderer>();
-            meshRenderer.material.mainTexture = texture;
+            meshRenderer.material = texture;
             var meshFilter = wall.AddComponent<MeshFilter>();
 
             var vertices = new Vector3[4]

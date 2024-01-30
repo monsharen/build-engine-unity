@@ -6,8 +6,7 @@ namespace DefaultNamespace
 {
     public class TextureManager
     {
-
-        private readonly Dictionary<int, Texture2D> _textureCache = new Dictionary<int, Texture2D>();
+        private readonly Dictionary<int, Material> _materialCache = new Dictionary<int, Material>();
         private readonly Texture2D _missingTexture;
 
         public TextureManager(Texture2D missingTexture)
@@ -20,18 +19,21 @@ namespace DefaultNamespace
             return _missingTexture;
         }
 
-        public Texture2D LoadTextureWithPicnum(int picNum)
+        public Material LoadMaterialWithPicnum(int picNum)
         {
-            if (_textureCache.TryGetValue(picNum, out var texture))
+            if (_materialCache.TryGetValue(picNum, out var cachedMaterial))
             {
-                return texture;
+                return cachedMaterial;
             }
             
             var textureFileName = "tile" + picNum.ToString("D4");
             var texture2d = LoadTexture("Assets/Sprites/upscale/" + textureFileName + ".png");
-            _textureCache.Add(picNum, texture2d);
-            return texture2d;
+            var material = new Material(Shader.Find("Standard"));
+            material.mainTexture = texture2d;
+            _materialCache.Add(picNum, material);
+            return material;
         }
+        
         private Texture2D LoadTexture(string filePath)
         {
             if (File.Exists(filePath))
