@@ -28,8 +28,8 @@ namespace DefaultNamespace
             
             var textureFileName = "tile" + picNum.ToString("D4");
             var texture2d = LoadTexture("Assets/Sprites/upscale/" + textureFileName + ".png");
-            var material = new Material(Shader.Find("Standard"));
-            material.mainTexture = texture2d;
+            
+            var material = CreateMaterial(texture2d);
             _materialCache.Add(picNum, material);
             return material;
         }
@@ -45,6 +45,13 @@ namespace DefaultNamespace
             }
 
             return _missingTexture;
+        }
+
+        private Material CreateMaterial(Texture2D texture2D)
+        {
+            var material = new Material(Shader.Find("Standard"));
+            material.mainTexture = texture2D;
+            return material;
         }
     }
 }

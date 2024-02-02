@@ -19,8 +19,11 @@ public class Game : MonoBehaviour
         var fileName = AssetManager.GetMapAssetPath("THE_BASE.MAP");
         var map = mapFileReader.ReadFile(fileName);
         Debug.Log(map);
-            
+
+        var staticBatchingManager = new StaticBatchingManager(rootNode);
         var mapRenderer = new MapRenderer(rootNode, _textureManager);
         mapRenderer.Render(map);
+        
+        staticBatchingManager.Combine();
     }
 }
